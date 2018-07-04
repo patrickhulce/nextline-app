@@ -1,0 +1,11 @@
+coverage/
+node_modules/
+dist/
+dist-lambda/
+
+yarn-error.log
+npm-debug.log
+lerna-debug.log
+
+*.d.ts
+*.secret
