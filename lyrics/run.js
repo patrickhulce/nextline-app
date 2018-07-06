@@ -1,16 +1,13 @@
 const fs = require('fs')
 const urlModule = require('url')
 const puppeteer = require('puppeteer')
+const {readSongsFromPlaylistFile} = require('./util')
 
 // List obtained on Spotify with
 // copy([...document.querySelectorAll('.tracklist-row')].map(x => `${x.querySelector('.tracklist-name').innerText} - ${x.querySelector('.second-line .link-subtle').innerText}`).join('\n'))
 const SONG_LIST_FILE = process.argv[2] || 'songs.txt'
 if (!fs.existsSync(SONG_LIST_FILE)) throw new Error('No song list file')
-const SONG_LIST = fs
-  .readFileSync(SONG_LIST_FILE, 'utf8')
-  .split('\n')
-  .map(l => l.trim())
-  .filter(l => l)
+const SONG_LIST = readSongsFromPlaylistFile(SONG_LIST_FILE)
 
 async function go() {
   const browser = await puppeteer.launch({headless: false, slowMo: 300})
@@ -18,12 +15,10 @@ async function go() {
 
   for (const song of SONG_LIST) {
     try {
-      const filename = `texts/${song
-        .replace(/[^a-z0-9]+/gi, '_')
-        .replace(/(^_|_$)/g, '')}.txt`.toLowerCase()
+      const filename = song.lyricsTxtPath
       if (fs.existsSync(filename)) continue
 
-      const query = new urlModule.URLSearchParams({q: song.replace(/[^a-z0-9\s]+/gi, '')})
+      const query = new urlModule.URLSearchParams({q: song.searchName})
       const url = `https://genius.com/search?${query}`
       console.log('searching!', url)
 
@@ -37,10 +32,10 @@ async function go() {
       await page.waitFor('.lyrics p')
 
       const lyrics = await page.evaluate(() => document.querySelector('.lyrics p').innerText)
-      console.log('fetched lyrics for', song)
+      console.log('fetched lyrics for', song.title, song.artist)
       fs.writeFileSync(filename, lyrics)
     } catch (err) {
-      console.log('failed to get lyrics for', song)
+      console.log('failed to get lyrics for', song.title, song.artist)
     }
   }
 

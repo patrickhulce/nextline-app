@@ -9,3 +9,5 @@ lerna-debug.log
 
 *.d.ts
 *.secret
+
+lyrics/texts/
